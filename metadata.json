@@ -1,0 +1,5 @@
+{
+  "name": "Oratora Odyssey Email Engine",
+  "description": "A professional tool for Oratora to design branded emails using AI and send them via Brevo with Excel recipient support.",
+  "requestFramePermissions": []
+}
