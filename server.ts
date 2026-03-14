@@ -2,7 +2,7 @@ import express from "express";
 import { createServer as createViteServer } from "vite";
 import path from "path";
 import cors from "cors";
-import { TransactionalEmailsApi, TransactionalEmailsApiApiKeys, SendSmtpEmail } from "@getbrevo/brevo";
+import { BrevoClient } from "@getbrevo/brevo";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -15,34 +15,30 @@ async function startServer() {
   app.use(express.json());
 
   // Brevo API Setup
-  const apiInstance = new TransactionalEmailsApi();
   const apiKey = process.env.BREVO_API_KEY;
-  
-  if (apiKey) {
-    apiInstance.setApiKey(TransactionalEmailsApiApiKeys.apiKey, apiKey);
-  }
+  const brevoClient = apiKey ? new BrevoClient({ apiKey }) : null;
 
   // API Routes
   app.post("/api/send-email", async (req, res) => {
     const { recipients, subject, htmlContent, senderName, senderEmail } = req.body;
 
-    if (!apiKey) {
+    if (!brevoClient || !apiKey) {
       return res.status(500).json({ error: "Brevo API key not configured" });
     }
 
     try {
-      const sendSmtpEmail = new SendSmtpEmail();
+      const sendSmtpEmail = new BrevoClient.SendSmtpEmail();
       sendSmtpEmail.subject = subject;
       sendSmtpEmail.htmlContent = htmlContent;
       sendSmtpEmail.sender = { name: senderName || "Oratora Odyssey", email: senderEmail || "noreply@oratora.com" };
       sendSmtpEmail.to = recipients.map((r: { email: string; name?: string }) => ({ email: r.email, name: r.name }));
 
-      const data = await apiInstance.sendTransacEmail(sendSmtpEmail);
-      res.json({ success: true, messageId: data.body.messageId });
+      const data = await brevoClient.transactionalEmails.sendTransacEmail(sendSmtpEmail);
+      res.json({ success: true, messageId: data.messageId });
     } catch (error: unknown) {
-      const err = error as { response?: { body: unknown }; message: string };
-      console.error("Brevo Error:", err.response?.body || err.message);
-      res.status(500).json({ error: "Failed to send email", details: err.response?.body || err.message });
+      const err = error as { message: string };
+      console.error("Brevo Error:", err.message);
+      res.status(500).json({ error: "Failed to send email", details: err.message });
     }
   });
 
