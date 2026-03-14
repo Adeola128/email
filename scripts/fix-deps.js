@@ -1,18 +1,18 @@
 import { execSync } from 'child_process';
 import { chdir } from 'process';
-import { dirname } from 'path';
-import { fileURLToPath } from 'url';
 
 try {
-  const __dirname = dirname(fileURLToPath(import.meta.url));
-  const projectDir = dirname(__dirname);
+  const projectDir = '/vercel/share/v0-project';
   
   chdir(projectDir);
-  console.log('[v0] Current directory:', process.cwd());
+  console.log('[v0] Changed to directory:', process.cwd());
   
-  // Run npm install
+  // Run npm install with cwd option
   console.log('[v0] Running npm install...');
-  execSync('npm install', { stdio: 'inherit' });
+  execSync('npm install', { 
+    stdio: 'inherit',
+    cwd: projectDir 
+  });
   
   console.log('[v0] Dependencies installed successfully!');
   process.exit(0);
